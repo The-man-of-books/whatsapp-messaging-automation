@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>WhatsApp Messaging Automation v1.1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: auto;
+        }
+        input, textarea, select, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #25d366;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1ebe5d;
+        }
+        #contact-list {
+            margin: 10px 0;
+            padding: 0;
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #contact-list li {
+            padding: 8px;
+            background: #eee;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        #contact-list li:hover {
+            background: #ddd;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .dark-mode {
+            background-color: #222;
+            color: #f5f5f5;
+        }
+        .dark-mode .container {
+            background-color: #333;
+            color: #f5f5f5;
+        }
+        .dark-mode input, .dark-mode textarea, .dark-mode select {
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>WhatsApp Messaging Automation v1.1 🚀</h2>
+
+        <label>Upload CSV File:</label>
+        <input type="file" id="csvFile" accept=".csv" />
+
+        <label>Search Contacts:</label>
+        <input type="text" id="search" placeholder="Search by name..." />
+
+        <label>Contacts:</label>
+        <ul id="contact-list"></ul>
+
+        <label>Phone Number:</label>
+        <input type="text" id="phone" placeholder="Phone number will auto-fill when you click a contact" />
+
+        <label>Select Message Template:</label>
+        <select id="template">
+            <option value="">-- Choose Template --</option>
+            <option value="Hello! This is a quick reminder for our appointment.">Appointment Reminder</option>
+            <option value="Thank you for your order! We appreciate your business.">Order Confirmation</option>
+            <option value="Hello! We have a special offer for you. Contact us to learn more.">Special Offer</option>
+        </select>
+
+        <label>Your Message:</label>
+        <textarea id="message" rows="4" placeholder="Enter your message"></textarea>
+
+        <button onclick="sendMessage()">Send on WhatsApp</button>
+
+        <div id="success" class="success"></div>
+
+        <button style="margin-top:20px;" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
+    </div>
+
+    <script>
+        // Load last message from localStorage
+        window.addEventListener('load', function() {
+            const lastMessage = localStorage.getItem('lastMessage');
+            if (lastMessage) {
+                document.getElementById('message').value = lastMessage;
+            }
+        });
+
+        // CSV Upload and Contact List
+        document.getElementById('csvFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                const list = document.getElementById('contact-list');
+                list.innerHTML = '';
+
+                window.contacts = [];
+
+                lines.slice(1).forEach(line => { // skip header
+                    const [name, phone] = line.split(',');
+                    if (name && phone) {
+                        const contact = { name: name.trim(), phone: phone.trim() };
+                        window.contacts.push(contact);
+
+                        const li = document.createElement('li');
+                        li.textContent = `${contact.name} - ${contact.phone}`;
+                        li.addEventListener('click', () => {
+                            document.getElementById('phone').value = contact.phone;
+                        });
+                        list.appendChild(li);
+                    }
+                });
+            };
+            reader.readAsText(file);
+        });
+
+        // Search Filter
+        document.getElementById('search').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            const list = document.getElementById('contact-list');
+            list.innerHTML = '';
+
+            window.contacts.filter(contact => contact.name.toLowerCase().includes(searchValue))
+                .forEach(contact => {
+                    const li = document.createElement('li');
+                    li.textContent = `${contact.name} - ${contact.phone}`;
+                    li.addEventListener('click', () => {
+                        document.getElementById('phone').value = contact.phone;
+                    });
+                    list.appendChild(li);
+                });
+        });
+
+        // Template selection
+        document.getElementById('template').addEventListener('change', function() {
+            const templateText = this.value;
+            if (templateText !== '') {
+                document.getElementById('message').value = templateText;
+            }
+        });
+
+        // Send WhatsApp Message
+        function sendMessage() {
+            const phone = document.getElementById('phone').value.trim();
+            const message = document.getElementById('message').value.trim();
+
+            if (phone === '' || message === '') {
+                alert('Please enter both phone number and message.');
+                return;
+            }
+
+            // Save message to localStorage
+            localStorage.setItem('lastMessage', message);
+
+            const encodedMessage = encodeURIComponent(message);
+            const url = `https://wa.me/${phone}?text=${encodedMessage}`;
+
+            window.open(url, '_blank');
+
+            document.getElementById('success').textContent = `✅ WhatsApp message window opened!`;
+            setTimeout(() => {
+                document.getElementById('success').textContent = '';
+            }, 3000);
+        }
+
+        // Dark Mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+    </script>
+</body>
+</html>
