@@ -76,8 +76,9 @@
     <div class="container">
         <h2>WhatsApp Messaging Automation v1.1 🚀</h2>
 
-        <label>Upload CSV File:</label>
+        <label for="csvFile">Upload CSV File:</label>
         <input type="file" id="csvFile" accept=".csv" />
+
 
         <label>Search Contacts:</label>
         <input type="text" id="search" placeholder="Search by name..." />
@@ -102,6 +103,18 @@
         <button onclick="sendMessage()">Send on WhatsApp</button>
 
         <div id="success" class="success"></div>
+
+        <h2>Leave a Comment</h2>
+<form id="commentForm">
+  <input type="text" id="username" placeholder="Your name" required />
+  <br />
+  <textarea id="commentText" placeholder="Your comment..." required></textarea>
+  <br />
+  <button type="submit">Post Comment</button>
+</form>
+
+<h3>Comments:</h3>
+<div id="commentsList"></div>
 
         <button style="margin-top:20px;" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
     </div>
@@ -201,5 +214,62 @@
             document.body.classList.toggle('dark-mode');
         }
     </script>
+  
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB49-rvnLzPnI81IAqQtIDYe-Rru-anKFU",
+    authDomain: "whatsappmessagingautomation.firebaseapp.com",
+    databaseURL: "https://whatsappmessagingautomation-default-rtdb.firebaseio.com",
+    projectId: "whatsappmessagingautomation",
+    storageBucket: "whatsappmessagingautomation.appspot.com",  // fixed here
+    messagingSenderId: "946781346516",
+    appId: "1:946781346516:web:b96aaaf8230418485ab941",
+    measurementId: "G-F1FD7BNDP7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const database = getDatabase(app);
+
+  // Save comment to Firebase
+  document.getElementById('commentForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const commentText = document.getElementById('commentText').value.trim();
+
+    if (username && commentText) {
+      const commentsRef = ref(database, 'comments');
+      push(commentsRef, {
+        username,
+        text: commentText,
+        timestamp: Date.now()
+      });
+
+      document.getElementById('commentForm').reset();
+    }
+  });
+
+  // Load comments from Firebase
+  const commentsRef = ref(database, 'comments');
+  onValue(commentsRef, (snapshot) => {
+    const commentsList = document.getElementById('commentsList');
+    commentsList.innerHTML = '';
+    const comments = snapshot.val();
+
+    for (const id in comments) {
+      const comment = comments[id];
+      const div = document.createElement('div');
+      div.className = 'comment';
+      div.innerHTML = `<strong>${comment.username}</strong>: ${comment.text}`;
+      commentsList.appendChild(div);
+    }
+  });
+</script>
+
+
 </body>
 </html>
